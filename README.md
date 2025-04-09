@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # MovieFlix - Movie Streaming & Info Website
 
 A full-featured movie streaming and information website built with React.js, Node.js, and MongoDB.
@@ -165,3 +166,6 @@ npm start
 ## License
 
 MIT © [Your Name] 
+=======
+# movieflix
+>>>>>>> 6341d54002783cf20999c34ed52625847e9c56c7
