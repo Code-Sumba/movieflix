@@ -1,8 +1,0 @@
-{
-  "success": true,
-  "token": "mock-jwt-token-for-admin-access",
-  "user": {
-    "username": "admin",
-    "isAdmin": true
-  }
-} 
