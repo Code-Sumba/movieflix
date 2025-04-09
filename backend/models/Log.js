@@ -3,22 +3,21 @@ const mongoose = require('mongoose');
 const logSchema = new mongoose.Schema({
   type: {
     type: String,
-    enum: ['scraper', 'api', 'admin', 'system'],
-    required: true
-  },
-  source: {
-    type: String,
+    enum: ['admin', 'scraper', 'api', 'system', 'user'],
     required: true
   },
   message: {
     type: String,
     required: true
   },
-  details: mongoose.Schema.Types.Mixed,
-  status: {
+  data: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  level: {
     type: String,
-    enum: ['success', 'info', 'warning', 'error'],
-    required: true
+    enum: ['info', 'success', 'warning', 'error'],
+    default: 'info'
   },
   timestamp: {
     type: Date,
@@ -26,8 +25,10 @@ const logSchema = new mongoose.Schema({
   }
 });
 
-// Create index on timestamp for efficient sorting and querying
+// Add indexes for frequent queries
 logSchema.index({ timestamp: -1 });
+logSchema.index({ type: 1, timestamp: -1 });
+logSchema.index({ level: 1, timestamp: -1 });
 
 const Log = mongoose.model('Log', logSchema);
 

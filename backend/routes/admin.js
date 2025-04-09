@@ -1,239 +1,194 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const Movie = require('../models/Movie');
 const Log = require('../models/Log');
+const authMiddleware = require('../middleware/auth');
+const scraperController = require('../controllers/scraper');
 
 // Logging utility function
-const logAdminAction = async (message, details = {}, status = 'info') => {
+const logAdminAction = async (message, data = {}, level = 'info') => {
   try {
-    await new Log({
+    const log = new Log({
       type: 'admin',
-      source: 'admin-api',
       message,
-      details,
-      status
-    }).save();
+      data,
+      level
+    });
+    await log.save();
   } catch (error) {
     console.error('Error logging admin action:', error);
   }
 };
 
-// GET dashboard stats
-router.get('/stats', async (req, res) => {
+// Protected route - Admin Dashboard Stats
+router.get('/stats', authMiddleware, async (req, res) => {
   try {
+    // Count total movies
     const totalMovies = await Movie.countDocuments();
-    const totalSeries = await Movie.countDocuments({ isSeries: true });
-    const totalMoviesOnly = await Movie.countDocuments({ isSeries: false });
-    
-    // Get latest 5 movies added
-    const latestMovies = await Movie.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select('title poster createdAt views downloads');
-    
-    // Get top 5 most viewed movies
-    const mostViewed = await Movie.find()
-      .sort({ views: -1 })
-      .limit(5)
-      .select('title poster views');
-    
-    // Get top 5 most downloaded movies
-    const mostDownloaded = await Movie.find()
-      .sort({ downloads: -1 })
-      .limit(5)
-      .select('title poster downloads');
-    
-    // Get counts by source
-    const sourceStats = await Movie.aggregate([
+
+    // Count movies by category
+    const moviesByCategory = await Movie.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Count movies by source
+    const moviesBySource = await Movie.aggregate([
       { $group: { _id: '$source', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
-    
-    // Get most recent logs
+
+    // Get latest added movies
+    const latestMovies = await Movie.find()
+      .sort('-createdAt')
+      .limit(5)
+      .select('title posterUrl category views createdAt');
+
+    // Get most viewed movies
+    const mostViewedMovies = await Movie.find()
+      .sort('-views')
+      .limit(5)
+      .select('title posterUrl category views');
+
+    // Get recent logs
     const recentLogs = await Log.find()
-      .sort({ timestamp: -1 })
-      .limit(10);
-    
+      .sort('-timestamp')
+      .limit(5);
+
     await logAdminAction('Admin dashboard stats fetched');
-    
+
     res.json({
       success: true,
       stats: {
         totalMovies,
-        totalSeries,
-        totalMoviesOnly,
+        moviesByCategory,
+        moviesBySource,
         latestMovies,
-        mostViewed,
-        mostDownloaded,
-        sourceStats,
+        mostViewedMovies,
         recentLogs
       }
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);
     await logAdminAction('Error fetching admin stats', { error: error.message }, 'error');
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-// GET all movies for admin with pagination (includes all fields)
-router.get('/movies', async (req, res) => {
+// Admin Login
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  // Simple validation
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: 'Please enter all fields' });
+  }
+
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 15;
-    const skip = (page - 1) * limit;
-    const searchQuery = req.query.search || '';
-    
-    // Base query
-    let query = {};
-    
-    // Apply search if provided
-    if (searchQuery) {
-      query = { $text: { $search: searchQuery } };
+    // For demo purposes, using environment variables or hardcoded credentials
+    // In production, use a proper user model with hashed passwords
+    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    // Check if username is correct
+    if (username !== adminUsername) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
-    
-    // Get total count for pagination info
-    const total = await Movie.countDocuments(query);
-    
-    // Get movies with pagination
-    const movies = await Movie.find(
-      query,
-      searchQuery ? { score: { $meta: 'textScore' } } : {}
-    )
-      .sort(searchQuery ? { score: { $meta: 'textScore' } } : { updatedAt: -1 })
-      .skip(skip)
-      .limit(limit);
-    
-    await logAdminAction('Admin fetched movies list', { 
-      page, limit, searchQuery
-    });
-    
-    res.json({
-      success: true,
-      movies,
-      pagination: {
-        total,
-        page,
-        pages: Math.ceil(total / limit)
+
+    // Check if password is correct (in production, use bcrypt.compare)
+    if (password !== adminPassword) {
+      return res.status(400).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    await logAdminAction('Admin login successful', { username });
+
+    // Create JWT payload
+    const payload = {
+      user: {
+        id: 'admin',
+        isAdmin: true
       }
-    });
+    };
+
+    // Sign token
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET || 'movieflix-jwt-secret',
+      { expiresIn: '24h' },
+      (err, token) => {
+        if (err) throw err;
+        res.json({
+          success: true,
+          token,
+          user: {
+            username: adminUsername,
+            isAdmin: true
+          }
+        });
+      }
+    );
   } catch (error) {
-    console.error('Error fetching movies for admin:', error);
-    await logAdminAction('Error fetching movies for admin', { error: error.message }, 'error');
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+    console.error('Login error:', error);
+    await logAdminAction('Error logging in', { error: error.message }, 'error');
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-// GET single movie for admin
-router.get('/movies/:id', async (req, res) => {
-  try {
-    const movie = await Movie.findById(req.params.id);
-    
-    if (!movie) {
-      await logAdminAction('Movie not found in admin', { movieId: req.params.id }, 'warning');
-      return res.status(404).json({ success: false, message: 'Movie not found' });
-    }
-    
-    await logAdminAction('Admin fetched movie details', { movieId: req.params.id });
-    
-    res.json({
-      success: true,
-      movie
-    });
-  } catch (error) {
-    console.error('Error fetching movie details for admin:', error);
-    await logAdminAction('Error fetching movie details for admin', { 
-      movieId: req.params.id, 
-      error: error.message 
-    }, 'error');
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-});
-
-// POST create new movie
-router.post('/movies', async (req, res) => {
+// Protected route - Add new movie
+router.post('/movies', authMiddleware, async (req, res) => {
   try {
     const movieData = req.body;
     
-    // Check if movie with same slug already exists
-    const existingMovie = await Movie.findOne({ slug: movieData.slug });
-    if (existingMovie) {
-      await logAdminAction('Failed to create movie - slug already exists', { 
-        slug: movieData.slug 
-      }, 'warning');
-      return res.status(400).json({ 
-        success: false, 
-        message: 'A movie with this slug already exists' 
-      });
+    // Simple validation
+    if (!movieData.title) {
+      return res.status(400).json({ success: false, message: 'Title is required' });
     }
-    
-    // Set source as 'manual' for admin-created movies
-    movieData.source = 'manual';
-    
+
     // Create new movie
     const newMovie = new Movie(movieData);
     await newMovie.save();
-    
-    await logAdminAction('New movie created by admin', { 
-      movieId: newMovie._id,
-      title: newMovie.title
-    }, 'success');
-    
+
+    await logAdminAction('Movie added by admin', { 
+      title: newMovie.title, 
+      id: newMovie._id 
+    });
+
     res.status(201).json({
       success: true,
-      message: 'Movie created successfully',
+      message: 'Movie added successfully',
       movie: newMovie
     });
   } catch (error) {
-    console.error('Error creating movie:', error);
-    await logAdminAction('Error creating movie', { 
-      error: error.message,
-      movieData: req.body
-    }, 'error');
+    console.error('Error adding movie:', error);
+    await logAdminAction('Error adding movie', { error: error.message }, 'error');
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
-// PUT update movie
-router.put('/movies/:id', async (req, res) => {
+// Protected route - Update movie
+router.put('/movies/:id', authMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
-    const updateData = req.body;
-    
-    // Check if updating slug and if it conflicts
-    if (updateData.slug) {
-      const existingMovieWithSlug = await Movie.findOne({ 
-        slug: updateData.slug,
-        _id: { $ne: id } // Exclude current movie from check
-      });
-      
-      if (existingMovieWithSlug) {
-        await logAdminAction('Failed to update movie - slug already exists', { 
-          slug: updateData.slug 
-        }, 'warning');
-        return res.status(400).json({ 
-          success: false, 
-          message: 'Another movie with this slug already exists' 
-        });
-      }
-    }
-    
-    // Update the movie
+    const movieId = req.params.id;
+    const updates = req.body;
+
+    // Find and update movie
     const updatedMovie = await Movie.findByIdAndUpdate(
-      id,
-      updateData,
+      movieId,
+      { $set: updates },
       { new: true, runValidators: true }
     );
-    
+
     if (!updatedMovie) {
-      await logAdminAction('Movie not found for update', { movieId: id }, 'warning');
+      await logAdminAction('Movie not found for update', { movieId }, 'warning');
       return res.status(404).json({ success: false, message: 'Movie not found' });
     }
-    
+
     await logAdminAction('Movie updated by admin', { 
-      movieId: id,
+      movieId,
       title: updatedMovie.title,
-      updatedFields: Object.keys(updateData)
+      updatedFields: Object.keys(updates)
     }, 'success');
     
     res.json({
@@ -244,7 +199,7 @@ router.put('/movies/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating movie:', error);
     await logAdminAction('Error updating movie', { 
-      movieId: req.params.id, 
+      movieId,
       error: error.message,
       updateData: req.body
     }, 'error');
@@ -252,150 +207,142 @@ router.put('/movies/:id', async (req, res) => {
   }
 });
 
-// DELETE movie
-router.delete('/movies/:id', async (req, res) => {
+// Protected route - Delete movie
+router.delete('/movies/:id', authMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
-    
-    // Find movie first to get details for logging
-    const movie = await Movie.findById(id);
-    
-    if (!movie) {
-      await logAdminAction('Movie not found for deletion', { movieId: id }, 'warning');
+    const movieId = req.params.id;
+
+    // Find and delete movie
+    const deletedMovie = await Movie.findByIdAndDelete(movieId);
+
+    if (!deletedMovie) {
+      await logAdminAction('Movie not found for deletion', { movieId }, 'warning');
       return res.status(404).json({ success: false, message: 'Movie not found' });
     }
-    
-    // Delete the movie
-    await Movie.findByIdAndDelete(id);
-    
+
     await logAdminAction('Movie deleted by admin', { 
-      movieId: id,
-      title: movie.title
+      movieId,
+      title: deletedMovie.title
     }, 'success');
     
     res.json({
       success: true,
-      message: 'Movie deleted successfully'
+      message: 'Movie deleted successfully',
+      movieId
     });
   } catch (error) {
     console.error('Error deleting movie:', error);
     await logAdminAction('Error deleting movie', { 
-      movieId: req.params.id, 
+      movieId,
       error: error.message
     }, 'error');
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
 
-// GET logs with pagination and filtering
-router.get('/logs', async (req, res) => {
+// Get all movies for admin (more details, no pagination limit)
+router.get('/movies', authMiddleware, async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const { limit = 50, page = 1, sort = '-createdAt' } = req.query;
     const skip = (page - 1) * limit;
-    const type = req.query.type; // 'scraper', 'api', 'admin', 'system'
-    const status = req.query.status; // 'success', 'info', 'warning', 'error'
-    const source = req.query.source;
     
-    // Build query based on filters
-    const query = {};
-    if (type) query.type = type;
-    if (status) query.status = status;
-    if (source) query.source = source;
-    
-    // Get total count for pagination info
-    const total = await Log.countDocuments(query);
-    
-    // Get logs with pagination
-    const logs = await Log.find(query)
-      .sort({ timestamp: -1 })
+    // Get all movies with full details
+    const movies = await Movie.find()
+      .sort(sort)
       .skip(skip)
-      .limit(limit);
+      .limit(parseInt(limit));
+      
+    const total = await Movie.countDocuments();
     
-    await logAdminAction('Admin fetched logs', { 
-      page, limit, filters: { type, status, source }
+    await logAdminAction('Admin fetched movies list', { 
+      page, limit, sort
     });
     
     res.json({
       success: true,
-      logs,
-      pagination: {
-        total,
-        page,
-        pages: Math.ceil(total / limit)
-      }
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalMovies: total,
+      movies
+    });
+  } catch (error) {
+    console.error('Error fetching admin movies:', error);
+    await logAdminAction('Error fetching admin movies', { error: error.message }, 'error');
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
+// Get single movie for admin with complete details
+router.get('/movies/:id', authMiddleware, async (req, res) => {
+  try {
+    const movieId = req.params.id;
+    
+    // Find movie by ID
+    const movie = await Movie.findById(movieId);
+    
+    if (!movie) {
+      await logAdminAction('Movie not found in admin', { movieId }, 'warning');
+      return res.status(404).json({ success: false, message: 'Movie not found' });
+    }
+    
+    await logAdminAction('Admin fetched movie details', { movieId });
+    
+    res.json({
+      success: true,
+      movie
+    });
+  } catch (error) {
+    console.error('Error fetching movie details:', error);
+    await logAdminAction('Error fetching movie details for admin', { 
+      movieId,
+      error: error.message
+    }, 'error');
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+});
+
+// Protected route - Run scraper
+router.post('/scrape', authMiddleware, scraperController.runScraper);
+
+// Get all logs
+router.get('/logs', authMiddleware, async (req, res) => {
+  try {
+    const { limit = 50, page = 1, type = 'all', level = 'all' } = req.query;
+    const skip = (page - 1) * limit;
+    
+    // Build query based on filters
+    const query = {};
+    
+    if (type !== 'all') {
+      query.type = type;
+    }
+    
+    if (level !== 'all') {
+      query.level = level;
+    }
+    
+    // Get logs with pagination
+    const logs = await Log.find(query)
+      .sort('-timestamp')
+      .skip(skip)
+      .limit(parseInt(limit));
+      
+    const total = await Log.countDocuments(query);
+    
+    await logAdminAction('Admin fetched logs', { 
+      page, limit, type, level
+    });
+    
+    res.json({
+      success: true,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalLogs: total,
+      logs
     });
   } catch (error) {
     console.error('Error fetching logs:', error);
     await logAdminAction('Error fetching logs', { error: error.message }, 'error');
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-});
-
-// GET scraper sources info
-router.get('/scraper/sources', async (req, res) => {
-  try {
-    const sources = [
-      { id: 'vegamovies', name: 'VegaMovies', url: 'https://vegamovies.day' },
-      { id: 'bollyflix', name: 'BollyFlix', url: 'https://bollyflix.day' },
-      { id: 'hdhub4u', name: 'HDHub4u', url: 'https://hdhub4u.bio' }
-    ];
-    
-    // Get movie counts by source
-    const sourceStats = await Movie.aggregate([
-      { $group: { _id: '$source', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-    
-    // Get latest scraper logs
-    const scraperLogs = await Log.find({ type: 'scraper' })
-      .sort({ timestamp: -1 })
-      .limit(10);
-    
-    await logAdminAction('Admin fetched scraper sources info');
-    
-    res.json({
-      success: true,
-      sources,
-      sourceStats,
-      scraperLogs
-    });
-  } catch (error) {
-    console.error('Error fetching scraper sources info:', error);
-    await logAdminAction('Error fetching scraper sources info', { error: error.message }, 'error');
-    res.status(500).json({ success: false, message: 'Server error', error: error.message });
-  }
-});
-
-// POST run scraper manually
-router.post('/scraper/run', async (req, res) => {
-  try {
-    const { source } = req.body;
-    
-    if (!source) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Source parameter is required' 
-      });
-    }
-    
-    // This would normally queue the scraper job
-    // Here we'll just log that it was requested
-    await logAdminAction('Manual scraper run requested', { source }, 'info');
-    
-    // In a real implementation, you would start the scraper here
-    // For example: runScraper(source);
-    
-    res.json({
-      success: true,
-      message: `Scraper for ${source} has been queued to run`,
-    });
-  } catch (error) {
-    console.error('Error running scraper manually:', error);
-    await logAdminAction('Error running scraper manually', { 
-      source: req.body.source,
-      error: error.message
-    }, 'error');
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });

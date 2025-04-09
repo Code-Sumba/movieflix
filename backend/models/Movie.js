@@ -122,6 +122,34 @@ const movieSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  category: {
+    type: String,
+    enum: ['Action', 'Drama', 'Comedy', 'Horror', 'Thriller', 'SciFi', 'Romance', 
+           'Animation', 'VegaMovies', 'BollyFlix', 'HDHub4u', 'Other'],
+    default: 'Other'
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  director: {
+    type: String,
+    trim: true
+  },
+  cast: [{
+    type: String,
+    trim: true
+  }],
+  posterUrl: {
+    type: String
+  },
+  streamLinks: [{
+    quality: String,
+    url: String
+  }],
+  year: {
+    type: Number
   }
 });
 
@@ -134,7 +162,8 @@ movieSchema.pre('save', function(next) {
 // Create text index for search
 movieSchema.index({ 
   title: 'text', 
-  description: 'text'
+  description: 'text',
+  director: 'text'
 });
 
 const Movie = mongoose.model('Movie', movieSchema);
