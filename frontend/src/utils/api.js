@@ -1,28 +1,160 @@
 import axios from 'axios';
 import { getToken } from './auth';
 
-// Base API URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// Check if we're running on GitHub Pages
+const isGitHubPages = window.location.hostname.includes('github.io');
 
-// Create axios instance with base configuration
+// Set the base URL for API calls
+const API_URL = isGitHubPages 
+  ? '/movieflix' // GitHub Pages base path
+  : 'http://localhost:5000/api'; // Local development API
+
+// Create axios instance with base URL
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_URL,
+  timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10 seconds
+    'Content-Type': 'application/json'
+  }
 });
 
-// Request interceptor to add auth token to all requests
+// Add request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = getToken();
+    // Add auth token if available
+    const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['x-auth-token'] = token;
     }
+    
+    // If running on GitHub Pages, modify the request
+    if (isGitHubPages) {
+      // Store the original URL for use in the response interceptor
+      config.originalUrl = config.url;
+      
+      // Convert URL to mock data path
+      // Transform URLs like "/movies/trending" to "/mock-data/movies/trending.json"
+      if (config.url.startsWith('/')) {
+        config.url = `/movieflix/mock-data${config.url}.json`;
+      } else {
+        config.url = `/movieflix/mock-data/${config.url}.json`;
+      }
+      
+      console.log('GitHub Pages mode: Redirecting to mock data:', config.url);
+    }
+    
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Add response interceptor for GitHub Pages mock mode
+api.interceptors.response.use(
+  (response) => {
+    if (isGitHubPages) {
+      console.log('Mock data response:', response.data);
+    }
+    return response;
+  },
+  async (error) => {
+    // If running on GitHub Pages and got an error, return mock data
+    if (isGitHubPages) {
+      console.warn('Error fetching mock data:', error.message);
+      console.log('Attempting to provide fallback mock data...');
+      
+      const originalRequest = error.config;
+      const originalUrl = originalRequest.originalUrl || '';
+      
+      // Default mock data for common endpoints
+      if (originalUrl.includes('/admin/login')) {
+        console.log('Providing mock login data');
+        return {
+          data: {
+            success: true,
+            token: 'mock-jwt-token-for-github-pages',
+            user: { username: 'admin', isAdmin: true }
+          }
+        };
+      }
+      
+      if (originalUrl.includes('/movies')) {
+        console.log('Providing mock movies data');
+        return {
+          data: {
+            success: true,
+            movies: [
+              {
+                id: '1',
+                title: 'The Shawshank Redemption',
+                posterUrl: '/movieflix/images/placeholder.svg',
+                year: 1994,
+                category: 'Drama',
+                rating: 9.3,
+                description: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.'
+              },
+              {
+                id: '2',
+                title: 'The Godfather',
+                posterUrl: '/movieflix/images/placeholder.svg',
+                year: 1972,
+                category: 'Crime',
+                rating: 9.2,
+                description: 'The aging patriarch of an organized crime dynasty transfers control of his clandestine empire to his reluctant son.'
+              },
+              {
+                id: '3',
+                title: 'The Dark Knight',
+                posterUrl: '/movieflix/images/placeholder.svg',
+                year: 2008,
+                category: 'Action',
+                rating: 9.0,
+                description: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.'
+              }
+            ],
+            currentPage: 1,
+            totalPages: 1,
+            totalMovies: 3
+          }
+        };
+      }
+      
+      if (originalUrl.includes('/categories')) {
+        console.log('Providing mock categories data');
+        return {
+          data: {
+            success: true,
+            categories: ['Action', 'Comedy', 'Drama', 'VegaMovies', 'BollyFlix']
+          }
+        };
+      }
+      
+      if (originalUrl.includes('/admin/stats')) {
+        console.log('Providing mock admin stats data');
+        return {
+          data: {
+            success: true,
+            stats: {
+              totalMovies: 100,
+              totalUsers: 250,
+              totalCategories: 8
+            }
+          }
+        };
+      }
+      
+      // Generic fallback for any other endpoint
+      console.log('Providing generic mock data response');
+      return {
+        data: {
+          success: true,
+          message: 'This is fallback mock data for GitHub Pages',
+          data: []
+        }
+      };
+    }
+    
+    return Promise.reject(error);
+  }
 );
 
 // Generic error handler
@@ -112,9 +244,9 @@ export const patch = async (url, data = {}) => {
 };
 
 // Delete request with error handling
-export const del = async (url, data = {}) => {
+export const del = async (url) => {
   try {
-    const response = await api.delete(url, { data });
+    const response = await api.delete(url);
     return {
       data: response.data,
       error: false
@@ -411,14 +543,4 @@ export const adminApi = {
   }
 };
 
-export default {
-  get,
-  post,
-  put,
-  patch,
-  del,
-  uploadFile,
-  getCancelToken,
-  createCancelableRequest,
-  api
-}; 
+export default api; 

@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "movies": [
+    {
+      "id": "1",
+      "title": "The Shawshank Redemption",
+      "posterUrl": "/movieflix/images/movie1.jpg",
+      "year": 1994,
+      "category": "Drama",
+      "rating": 9.3,
+      "backdrop": "/movieflix/images/backdrop1.jpg"
+    },
+    {
+      "id": "2",
+      "title": "The Godfather",
+      "posterUrl": "/movieflix/images/movie2.jpg",
+      "year": 1972,
+      "category": "Crime",
+      "rating": 9.2,
+      "backdrop": "/movieflix/images/backdrop2.jpg"
+    },
+    {
+      "id": "5",
+      "title": "The Dark Knight",
+      "posterUrl": "/movieflix/images/movie5.jpg",
+      "year": 2008,
+      "category": "Action",
+      "rating": 9.0,
+      "backdrop": "/movieflix/images/backdrop5.jpg"
+    }
+  ]
+} 

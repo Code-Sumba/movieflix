@@ -1,0 +1,127 @@
+{
+  "success": true,
+  "stats": {
+    "totalMovies": 250,
+    "moviesByCategory": [
+      { "_id": "Drama", "count": 68 },
+      { "_id": "Action", "count": 42 },
+      { "_id": "Comedy", "count": 38 },
+      { "_id": "Sci-Fi", "count": 25 },
+      { "_id": "VegaMovies", "count": 18 },
+      { "_id": "Thriller", "count": 15 },
+      { "_id": "BollyFlix", "count": 12 },
+      { "_id": "Animation", "count": 10 },
+      { "_id": "Horror", "count": 8 },
+      { "_id": "Romance", "count": 7 },
+      { "_id": "HDHub4u", "count": 5 },
+      { "_id": "Other", "count": 2 }
+    ],
+    "moviesBySource": [
+      { "_id": "manual", "count": 120 },
+      { "_id": "vegamovies", "count": 75 },
+      { "_id": "bollyflix", "count": 45 },
+      { "_id": "hdhub4u", "count": 10 }
+    ],
+    "latestMovies": [
+      {
+        "title": "Dune",
+        "posterUrl": "/movieflix/images/dune.jpg",
+        "category": "Sci-Fi",
+        "views": 1250,
+        "createdAt": "2023-03-15T12:00:00.000Z"
+      },
+      {
+        "title": "The Batman",
+        "posterUrl": "/movieflix/images/batman.jpg",
+        "category": "Action",
+        "views": 980,
+        "createdAt": "2023-03-10T15:30:00.000Z"
+      },
+      {
+        "title": "Spider-Man: No Way Home",
+        "posterUrl": "/movieflix/images/spiderman.jpg",
+        "category": "Action",
+        "views": 1500,
+        "createdAt": "2023-03-05T09:20:00.000Z"
+      },
+      {
+        "title": "Everything Everywhere All at Once",
+        "posterUrl": "/movieflix/images/everything.jpg",
+        "category": "Sci-Fi",
+        "views": 850,
+        "createdAt": "2023-03-01T14:45:00.000Z"
+      },
+      {
+        "title": "Top Gun: Maverick",
+        "posterUrl": "/movieflix/images/topgun.jpg",
+        "category": "Action",
+        "views": 920,
+        "createdAt": "2023-02-25T11:15:00.000Z"
+      }
+    ],
+    "mostViewedMovies": [
+      {
+        "title": "Spider-Man: No Way Home",
+        "posterUrl": "/movieflix/images/spiderman.jpg",
+        "category": "Action",
+        "views": 15250
+      },
+      {
+        "title": "The Shawshank Redemption",
+        "posterUrl": "/movieflix/images/movie1.jpg",
+        "category": "Drama",
+        "views": 12980
+      },
+      {
+        "title": "The Dark Knight",
+        "posterUrl": "/movieflix/images/movie5.jpg",
+        "category": "Action",
+        "views": 11100
+      },
+      {
+        "title": "Inception",
+        "posterUrl": "/movieflix/images/movie3.jpg",
+        "category": "Sci-Fi",
+        "views": 10580
+      },
+      {
+        "title": "Avengers: Endgame",
+        "posterUrl": "/movieflix/images/avengers.jpg",
+        "category": "Action",
+        "views": 9760
+      }
+    ],
+    "recentLogs": [
+      {
+        "type": "admin",
+        "message": "Admin dashboard stats fetched",
+        "level": "info",
+        "timestamp": "2023-04-09T18:30:45.000Z"
+      },
+      {
+        "type": "scraper",
+        "message": "VegaMovies scraper completed successfully",
+        "level": "success",
+        "timestamp": "2023-04-09T15:20:30.000Z"
+      },
+      {
+        "type": "admin",
+        "message": "Movie 'Dune' added by admin",
+        "level": "success",
+        "timestamp": "2023-04-09T12:45:10.000Z"
+      },
+      {
+        "type": "scraper",
+        "message": "BollyFlix scraper completed with warnings",
+        "level": "warning",
+        "timestamp": "2023-04-09T10:15:25.000Z"
+      },
+      {
+        "type": "system",
+        "message": "Scheduled scraping task started",
+        "level": "info",
+        "timestamp": "2023-04-09T06:00:00.000Z"
+      }
+    ]
+  }
+} 
