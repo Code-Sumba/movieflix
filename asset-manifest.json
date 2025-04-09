@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/movieflix/static/css/main.b1a692c4.css",
+    "main.js": "/movieflix/static/js/main.3e16b0a5.js",
+    "index.html": "/movieflix/index.html",
+    "main.b1a692c4.css.map": "/movieflix/static/css/main.b1a692c4.css.map",
+    "main.3e16b0a5.js.map": "/movieflix/static/js/main.3e16b0a5.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b1a692c4.css",
+    "static/js/main.3e16b0a5.js"
+  ]
+}
