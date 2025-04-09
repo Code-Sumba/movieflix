@@ -1,9 +1,9 @@
 {
   "files": {
-    "main.css": "/movieflix/static/css/main.e3cfd62d.css",
-    "main.js": "/movieflix/static/js/main.39595ff4.js",
-    "static/js/528.14d48286.chunk.js": "/movieflix/static/js/528.14d48286.chunk.js",
-    "static/js/37.44f398e1.chunk.js": "/movieflix/static/js/37.44f398e1.chunk.js",
+    "main.css": "/movieflix/static/css/main.c6ce4039.css",
+    "main.js": "/movieflix/static/js/main.c8d86cfa.js",
+    "static/js/528.310c58ba.chunk.js": "/movieflix/static/js/528.310c58ba.chunk.js",
+    "static/js/37.8b9a727c.chunk.js": "/movieflix/static/js/37.8b9a727c.chunk.js",
     "static/js/639.75f3aa81.chunk.js": "/movieflix/static/js/639.75f3aa81.chunk.js",
     "static/js/999.2502e37a.chunk.js": "/movieflix/static/js/999.2502e37a.chunk.js",
     "static/js/900.22839c89.chunk.js": "/movieflix/static/js/900.22839c89.chunk.js",
@@ -16,10 +16,10 @@
     "static/js/380.ee39981a.chunk.js": "/movieflix/static/js/380.ee39981a.chunk.js",
     "static/js/466.aafb508a.chunk.js": "/movieflix/static/js/466.aafb508a.chunk.js",
     "index.html": "/movieflix/index.html",
-    "main.e3cfd62d.css.map": "/movieflix/static/css/main.e3cfd62d.css.map",
-    "main.39595ff4.js.map": "/movieflix/static/js/main.39595ff4.js.map",
-    "528.14d48286.chunk.js.map": "/movieflix/static/js/528.14d48286.chunk.js.map",
-    "37.44f398e1.chunk.js.map": "/movieflix/static/js/37.44f398e1.chunk.js.map",
+    "main.c6ce4039.css.map": "/movieflix/static/css/main.c6ce4039.css.map",
+    "main.c8d86cfa.js.map": "/movieflix/static/js/main.c8d86cfa.js.map",
+    "528.310c58ba.chunk.js.map": "/movieflix/static/js/528.310c58ba.chunk.js.map",
+    "37.8b9a727c.chunk.js.map": "/movieflix/static/js/37.8b9a727c.chunk.js.map",
     "639.75f3aa81.chunk.js.map": "/movieflix/static/js/639.75f3aa81.chunk.js.map",
     "999.2502e37a.chunk.js.map": "/movieflix/static/js/999.2502e37a.chunk.js.map",
     "900.22839c89.chunk.js.map": "/movieflix/static/js/900.22839c89.chunk.js.map",
@@ -33,7 +33,7 @@
     "466.aafb508a.chunk.js.map": "/movieflix/static/js/466.aafb508a.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.e3cfd62d.css",
-    "static/js/main.39595ff4.js"
+    "static/css/main.c6ce4039.css",
+    "static/js/main.c8d86cfa.js"
   ]
 }
