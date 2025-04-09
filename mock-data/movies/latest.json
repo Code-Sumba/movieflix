@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "movies": [
+    {
+      "id": "9",
+      "title": "Interstellar",
+      "posterUrl": "/movieflix/images/movie9.jpg",
+      "year": 2014,
+      "category": "Sci-Fi",
+      "rating": 8.6
+    },
+    {
+      "id": "10",
+      "title": "The Silence of the Lambs",
+      "posterUrl": "/movieflix/images/movie10.jpg",
+      "year": 1991,
+      "category": "Thriller",
+      "rating": 8.6
+    },
+    {
+      "id": "11",
+      "title": "Parasite",
+      "posterUrl": "/movieflix/images/movie11.jpg",
+      "year": 2019,
+      "category": "Thriller",
+      "rating": 8.5
+    },
+    {
+      "id": "12",
+      "title": "The Lion King",
+      "posterUrl": "/movieflix/images/movie12.jpg",
+      "year": 1994,
+      "category": "Animation",
+      "rating": 8.5
+    },
+    {
+      "id": "13",
+      "title": "Goodfellas",
+      "posterUrl": "/movieflix/images/movie13.jpg",
+      "year": 1990,
+      "category": "Crime",
+      "rating": 8.7
+    }
+  ]
+} 
